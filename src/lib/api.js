@@ -5,7 +5,7 @@ export async function api(path, options = {}) {
   if (!session) throw new Error('Tu sesión terminó. Inicia sesión de nuevo.');
   const response = await fetch(`${(import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '')}${path}`, {
     ...options,
-    headers: { Authorization: `Bearer ${session.token}`, ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...options.headers },
+    headers: { Authorization: `Bearer ${session.token}`, ...(session.demo && import.meta.env.DEV ? { 'x-dev-sub': 'antojolink-local-demo', 'x-dev-email': 'demo@antojolink.local' } : {}), ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...options.headers },
     body: options.body && typeof options.body !== 'string' ? JSON.stringify(options.body) : options.body,
   });
   if (response.status === 204) return null;

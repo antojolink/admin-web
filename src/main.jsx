@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import QRCode from 'qrcode';
 import { api, uploadImage } from './lib/api.js';
-import { completeTemporaryPassword, login, logout, readSession } from './lib/auth.js';
+import { completeTemporaryPassword, login, logout, readSession, startLocalDemo } from './lib/auth.js';
 import { productPayload } from './lib/forms.js';
 import { menuLink } from './lib/qr.js';
 import './styles.css';
@@ -29,11 +29,16 @@ function Login() {
     } catch (err) { setError(err.message || 'No se pudo iniciar sesión.'); }
     finally { setBusy(false); }
   }
+  async function enterDemo() {
+    startLocalDemo();
+    try { await api('/restaurantes/me'); navigate('/dashboard', { replace: true }); }
+    catch (err) { navigate(err.status === 403 ? '/onboarding' : '/dashboard', { replace: true }); }
+  }
   return <main className="login-page"><section className="login-card"><p className="eyebrow">ANTOJOLINK</p><h1>{challenge ? 'Crea tu contraseña' : 'Tu restaurante, en tus manos'}</h1><p>Administra tu menú digital desde un solo lugar.</p><form onSubmit={submit}>
     {!challenge && <><label>Correo<input type="email" value={email} onChange={e=>setEmail(e.target.value)} required autoComplete="username" /></label><label>Contraseña<input type="password" value={password} onChange={e=>setPassword(e.target.value)} required autoComplete="current-password" /></label></>}
     {challenge && <label>Nueva contraseña<input type="password" value={newPassword} onChange={e=>setNewPassword(e.target.value)} required autoComplete="new-password" /></label>}
     <ErrorNotice message={error} /><button disabled={busy}>{busy ? 'Espera…' : challenge ? 'Guardar contraseña' : 'Entrar al panel'}</button>
-  </form></section></main>;
+  </form>{import.meta.env.DEV && import.meta.env.VITE_DEMO_MODE === 'true' && <button className="ghost demo-button" onClick={enterDemo}>Entrar en modo demo local</button>}</section></main>;
 }
 
 function Shell({ children }) {

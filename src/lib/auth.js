@@ -33,3 +33,12 @@ export async function completeTemporaryPassword(email, password, challengeSessio
 }
 
 export function logout() { sessionStorage.removeItem(key); }
+
+export function startLocalDemo() {
+  if (!import.meta.env.DEV || import.meta.env.VITE_DEMO_MODE !== 'true') {
+    throw new Error('El modo de demostración solo está disponible en desarrollo local.');
+  }
+  const session = { token: 'local-demo', demo: true, expiresAt: Date.now() + 8 * 60 * 60 * 1000 };
+  sessionStorage.setItem(key, JSON.stringify(session));
+  return session;
+}
