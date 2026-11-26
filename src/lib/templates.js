@@ -1,0 +1,38 @@
+export const MENU_TEMPLATES = [
+  {
+    id: 'trattoria',
+    name: 'Osteria Clásica',
+    subtitle: 'Pergamino cálido, serif editorial y doble filete romano',
+    defaultColor: '#9B2226',
+    paper: '#FAF5EC',
+    ink: '#231F20',
+    accent: '#9B2226',
+  },
+  {
+    id: 'maiz',
+    name: 'Artesanal Mexicana',
+    subtitle: 'Papel tono masa, índice numerado y estética de comal',
+    defaultColor: '#1B5E20',
+    paper: '#F4EFE4',
+    ink: '#1E1C1A',
+    accent: '#1B5E20',
+  },
+  {
+    id: 'waffle',
+    name: 'Luminosa & Brunch',
+    subtitle: 'Crema de mantequilla, arco de cafetería y tono cercano',
+    defaultColor: '#D97706',
+    paper: '#FFFBF2',
+    ink: '#2C1E16',
+    accent: '#B45309',
+  },
+  {
+    id: 'nocturno',
+    name: 'Nocturna & Barra',
+    subtitle: 'Fondo espresso profundo y alto contraste para poca luz',
+    defaultColor: '#C89B54',
+    paper: '#14110F',
+    ink: '#F2EAE1',
+    accent: '#C89B54',
+  },
+];
