@@ -1,14 +1,24 @@
 import React from 'react';
-import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it, beforeEach, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { api } from '../src/lib/api.js';
+import { confirmRegistration, register } from '../src/lib/auth.js';
 import { App } from '../src/main.jsx';
 import { productPayload, validPrice } from '../src/lib/forms.js';
 import { menuLink } from '../src/lib/qr.js';
 
 vi.mock('../src/lib/api.js', () => ({ api: vi.fn(), uploadImage: vi.fn() }));
-beforeEach(() => { sessionStorage.clear(); vi.mocked(api).mockReset(); });
+vi.mock('../src/lib/auth.js', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    register: vi.fn(),
+    confirmRegistration: vi.fn(),
+  };
+});
+afterEach(() => { cleanup(); });
+beforeEach(() => { sessionStorage.clear(); vi.mocked(api).mockReset(); vi.mocked(register).mockReset(); vi.mocked(confirmRegistration).mockReset(); });
 
 describe('panel', () => {
   it('redirige una ruta protegida a login sin sesión', () => {
@@ -55,5 +65,15 @@ describe('panel', () => {
         telefono: '3319876543',
       },
     }));
+  });
+  it('permite crear cuenta nueva desde el login y pide código de verificación', async () => {
+    vi.mocked(register).mockResolvedValueOnce({ userConfirmed: false });
+    render(<MemoryRouter initialEntries={['/login']}><App/></MemoryRouter>);
+    fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
+    fireEvent.change(screen.getByLabelText('Correo'), { target: { value: 'nuevo@restaurante.com' } });
+    fireEvent.change(screen.getByLabelText(/Contraseña/i), { target: { value: 'Secreta123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Registrarme y crear menú' }));
+    await waitFor(() => expect(register).toHaveBeenCalledWith('nuevo@restaurante.com', 'Secreta123'));
+    expect(screen.getByRole('heading', { name: 'Verifica tu correo' })).toBeInTheDocument();
   });
 });
