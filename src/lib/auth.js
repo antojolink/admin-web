@@ -1,4 +1,11 @@
-import { CognitoIdentityProviderClient, InitiateAuthCommand, RespondToAuthChallengeCommand } from '@aws-sdk/client-cognito-identity-provider';
+import {
+  CognitoIdentityProviderClient,
+  ConfirmSignUpCommand,
+  InitiateAuthCommand,
+  ResendConfirmationCodeCommand,
+  RespondToAuthChallengeCommand,
+  SignUpCommand,
+} from '@aws-sdk/client-cognito-identity-provider';
 
 const key = 'antojolink.session';
 const client = new CognitoIdentityProviderClient({ region: import.meta.env.VITE_AWS_REGION || 'us-east-1' });
@@ -25,6 +32,34 @@ export async function login(email, password) {
   const result = await client.send(new InitiateAuthCommand({ AuthFlow: 'USER_PASSWORD_AUTH', ClientId: clientId, AuthParameters: { USERNAME: email, PASSWORD: password } }));
   if (result.ChallengeName === 'NEW_PASSWORD_REQUIRED') return { challenge: true, email, session: result.Session };
   return { session: saveSession(result) };
+}
+
+export async function register(email, password) {
+  if (!clientId) throw new Error('Configura VITE_COGNITO_CLIENT_ID.');
+  const result = await client.send(new SignUpCommand({
+    ClientId: clientId,
+    Username: email,
+    Password: password,
+    UserAttributes: [{ Name: 'email', Value: email }],
+  }));
+  return { userConfirmed: Boolean(result.UserConfirmed) };
+}
+
+export async function confirmRegistration(email, code) {
+  if (!clientId) throw new Error('Configura VITE_COGNITO_CLIENT_ID.');
+  await client.send(new ConfirmSignUpCommand({
+    ClientId: clientId,
+    Username: email,
+    ConfirmationCode: String(code).trim(),
+  }));
+}
+
+export async function resendConfirmationCode(email) {
+  if (!clientId) throw new Error('Configura VITE_COGNITO_CLIENT_ID.');
+  await client.send(new ResendConfirmationCodeCommand({
+    ClientId: clientId,
+    Username: email,
+  }));
 }
 
 export async function completeTemporaryPassword(email, password, challengeSession) {
