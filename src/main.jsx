@@ -6,10 +6,45 @@ import { api, uploadImage } from './lib/api.js';
 import { completeTemporaryPassword, login, logout, readSession, startLocalDemo } from './lib/auth.js';
 import { productPayload } from './lib/forms.js';
 import { menuLink } from './lib/qr.js';
+import { MENU_TEMPLATES } from './lib/templates.js';
 import './styles.css';
 
 function ErrorNotice({ message }) { return message ? <p className="error" role="alert">{message}</p> : null; }
+function SuccessNotice({ message }) { return message ? <p className="success" role="status">{message}</p> : null; }
 function Protected({ children }) { return readSession() ? children : <Navigate to="/login" replace />; }
+
+function TemplatePicker({ value, onChange }) {
+  return (
+    <fieldset className="template-fieldset">
+      <legend>Plantilla del menú</legend>
+      <div className="template-grid">
+        {MENU_TEMPLATES.map((tpl) => {
+          const selected = value === tpl.id;
+          return (
+            <button
+              type="button"
+              key={tpl.id}
+              className={`template-card${selected ? ' selected' : ''}`}
+              aria-pressed={selected}
+              onClick={() => onChange(tpl.id)}
+            >
+              <span
+                className="template-preview"
+                style={{ background: tpl.paper, color: tpl.ink, borderColor: tpl.accent }}
+              >
+                <span className="tpl-bar" style={{ background: tpl.accent }} />
+                <span className="tpl-title">Aa</span>
+                <span className="tpl-line" style={{ background: tpl.ink }} />
+              </span>
+              <strong>{tpl.name}</strong>
+              <small>{tpl.subtitle}</small>
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
 
 function Login() {
   const navigate = useNavigate();
@@ -58,9 +93,9 @@ function useRequest(loader) {
 }
 
 function Onboarding() {
-  const navigate = useNavigate(); const [nombre,setNombre] = React.useState(''); const [temaColor,setColor] = React.useState('#bd4b2b'); const [error,setError] = React.useState(''); const [busy,setBusy] = React.useState(false);
-  async function submit(e) { e.preventDefault(); setBusy(true); setError(''); try { await api('/restaurantes',{method:'POST',body:{nombre,temaColor}}); navigate('/dashboard'); } catch(err) { setError(err.message); } finally { setBusy(false); } }
-  return <Shell><div className="page-head"><p className="eyebrow">PRIMER PASO</p><h1>Crea tu restaurante</h1><p>Tu menú tendrá una dirección propia para compartir por QR.</p></div><form className="card form" onSubmit={submit}><label>Nombre del restaurante<input value={nombre} onChange={e=>setNombre(e.target.value)} maxLength="120" required /></label><label>Color del menú<input type="color" value={temaColor} onChange={e=>setColor(e.target.value)} /></label><ErrorNotice message={error}/><button disabled={busy}>Crear restaurante</button></form></Shell>;
+  const navigate = useNavigate(); const [nombre,setNombre] = React.useState(''); const [temaColor,setColor] = React.useState('#9B2226'); const [plantilla,setPlantilla] = React.useState('trattoria'); const [error,setError] = React.useState(''); const [busy,setBusy] = React.useState(false);
+  async function submit(e) { e.preventDefault(); setBusy(true); setError(''); try { await api('/restaurantes',{method:'POST',body:{nombre,temaColor,plantilla}}); navigate('/dashboard'); } catch(err) { setError(err.message); } finally { setBusy(false); } }
+  return <Shell><div className="page-head"><p className="eyebrow">PRIMER PASO</p><h1>Crea tu restaurante</h1><p>Tu menú tendrá una dirección propia para compartir por QR.</p></div><form className="card form" onSubmit={submit}><label>Nombre del restaurante<input value={nombre} onChange={e=>setNombre(e.target.value)} maxLength="120" required /></label><TemplatePicker value={plantilla} onChange={setPlantilla} /><label>Color del menú<input type="color" value={temaColor} onChange={e=>setColor(e.target.value)} /></label><ErrorNotice message={error}/><button disabled={busy}>Crear restaurante</button></form></Shell>;
 }
 
 function Dashboard() {
@@ -95,11 +130,11 @@ function Products() {
 }
 
 function Settings() {
-  const restaurant=useRequest(()=>api('/restaurantes/me'),[]);const [form,setForm]=React.useState(null);const [error,setError]=React.useState('');const [busy,setBusy]=React.useState(false);
-  React.useEffect(()=>{if(restaurant.data)setForm({nombre:restaurant.data.nombre,temaColor:restaurant.data.temaColor||'#bd4b2b',logoUrl:restaurant.data.logoUrl||'',telefono:restaurant.data.telefono||''});},[restaurant.data]);
-  async function image(e){const file=e.target.files?.[0];if(!file)return;setBusy(true);try{const logoUrl=await uploadImage(file,'logo');setForm(prev=>({...prev,logoUrl}));}catch(err){setError(err.message);}finally{setBusy(false);}}
-  async function submit(e){e.preventDefault();setBusy(true);setError('');try{await api('/restaurantes/me',{method:'PUT',body:{...form,logoUrl:form.logoUrl||null,telefono:form.telefono||null}});restaurant.refresh();}catch(err){setError(err.message);}finally{setBusy(false);}}
-  return <Shell><div className="page-head"><p className="eyebrow">TU MARCA</p><h1>Configuración</h1></div><ErrorNotice message={error||restaurant.error}/>{!form?<p>Cargando…</p>:<form className="card form" onSubmit={submit}><label>Nombre<input value={form.nombre} onChange={e=>setForm({...form,nombre:e.target.value})} required /></label><label>Color del menú<input type="color" value={form.temaColor} onChange={e=>setForm({...form,temaColor:e.target.value})}/></label><label>Teléfono<input value={form.telefono} onChange={e=>setForm({...form,telefono:e.target.value})}/></label><label>Logo<input type="file" accept="image/jpeg,image/png,image/webp" onChange={image}/>{form.logoUrl&&<small>Logo subido correctamente</small>}</label><button disabled={busy}>Guardar cambios</button></form>}</Shell>;
+  const restaurant=useRequest(()=>api('/restaurantes/me'),[]);const [form,setForm]=React.useState(null);const [error,setError]=React.useState('');const [saved,setSaved]=React.useState('');const [busy,setBusy]=React.useState(false);
+  React.useEffect(()=>{if(restaurant.data)setForm({nombre:restaurant.data.nombre,temaColor:restaurant.data.temaColor||'#9B2226',plantilla:restaurant.data.plantilla||'trattoria',logoUrl:restaurant.data.logoUrl||'',telefono:restaurant.data.telefono||''});},[restaurant.data]);
+  async function image(e){const file=e.target.files?.[0];if(!file)return;setBusy(true);setError('');setSaved('');try{const logoUrl=await uploadImage(file,'logo');setForm(prev=>({...prev,logoUrl}));}catch(err){setError(err.message);}finally{setBusy(false);}}
+  async function submit(e){e.preventDefault();setBusy(true);setError('');setSaved('');try{await api('/restaurantes/me',{method:'PUT',body:{...form,logoUrl:form.logoUrl||null,telefono:form.telefono||null}});setSaved('Cambios guardados y publicados en tu menú.');restaurant.refresh();}catch(err){setError(err.message);}finally{setBusy(false);}}
+  return <Shell><div className="page-head"><p className="eyebrow">TU MARCA</p><h1>Configuración</h1></div><ErrorNotice message={error||restaurant.error}/><SuccessNotice message={saved}/>{!form?<p>Cargando…</p>:<form className="card form" onSubmit={submit}><label>Nombre<input value={form.nombre} onChange={e=>setForm({...form,nombre:e.target.value})} required /></label><TemplatePicker value={form.plantilla} onChange={plantilla=>setForm({...form,plantilla})} /><label>Color del menú<input type="color" value={form.temaColor} onChange={e=>setForm({...form,temaColor:e.target.value})}/></label><label>Teléfono<input value={form.telefono} onChange={e=>setForm({...form,telefono:e.target.value})} placeholder="Ej. 3314567890"/></label><label>Logo<input type="file" accept="image/jpeg,image/png,image/webp" onChange={image}/>{form.logoUrl&&<div className="logo-preview"><img src={form.logoUrl} alt="Logo actual"/><small>Logo configurado</small></div>}</label><button disabled={busy}>{busy?'Guardando…':'Guardar cambios'}</button></form>}</Shell>;
 }
 
 export function App(){return <Routes><Route path="/login" element={<Login/>}/><Route path="/onboarding" element={<Protected><Onboarding/></Protected>}/><Route path="/dashboard" element={<Protected><Dashboard/></Protected>}/><Route path="/categorias" element={<Protected><Categories/></Protected>}/><Route path="/productos" element={<Protected><Products/></Protected>}/><Route path="/configuracion" element={<Protected><Settings/></Protected>}/><Route path="*" element={<Navigate to="/dashboard" replace/>}/></Routes>;}

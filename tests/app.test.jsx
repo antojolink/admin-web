@@ -32,4 +32,28 @@ describe('panel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Añadir categoría' }));
     await waitFor(() => expect(api).toHaveBeenCalledWith('/categorias', { method:'POST', body:{ nombre:'Tacos', orden:0 } }));
   });
+  it('permite elegir plantilla en Configuración y enviarla al backend', async () => {
+    sessionStorage.setItem('antojolink.session', JSON.stringify({ token: 'test', expiresAt: Date.now()+60000 }));
+    vi.mocked(api).mockResolvedValue({
+      nombre: 'La Casa del Maíz',
+      temaColor: '#1B5E20',
+      plantilla: 'trattoria',
+      logoUrl: null,
+      telefono: '3319876543',
+    });
+    render(<MemoryRouter initialEntries={['/configuracion']}><App/></MemoryRouter>);
+    await waitFor(() => expect(screen.getByDisplayValue('La Casa del Maíz')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /Artesanal Mexicana/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    await waitFor(() => expect(api).toHaveBeenCalledWith('/restaurantes/me', {
+      method: 'PUT',
+      body: {
+        nombre: 'La Casa del Maíz',
+        temaColor: '#1B5E20',
+        plantilla: 'maiz',
+        logoUrl: null,
+        telefono: '3319876543',
+      },
+    }));
+  });
 });
